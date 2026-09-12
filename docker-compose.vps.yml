@@ -1,0 +1,33 @@
+# Use this variant when Nginx + Certbot on the host already manage
+# TLS/other sites (no Caddy, no 80/443 here — just the app on a local port
+# that the host Nginx reverse-proxies to).
+#
+#   docker compose -f docker-compose.vps.yml up -d --build
+#
+services:
+  app:
+    build: .
+    image: imageconverter:latest
+    container_name: imageconverter
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3000"
+    environment:
+      - NODE_ENV=production
+      - MAX_UPLOAD_BYTES=${MAX_UPLOAD_BYTES:-47185920}
+      - MAX_INPUT_PIXELS=${MAX_INPUT_PIXELS:-60000000}
+      - MAX_OUTPUT_DIMENSION=${MAX_OUTPUT_DIMENSION:-8000}
+      - MAX_BATCH_FILES=${MAX_BATCH_FILES:-30}
+      - PROCESSING_TIMEOUT_MS=${PROCESSING_TIMEOUT_MS:-30000}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-40}
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
