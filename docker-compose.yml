@@ -1,0 +1,43 @@
+services:
+  app:
+    build: .
+    image: pixel-studio:latest
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - MAX_UPLOAD_BYTES=${MAX_UPLOAD_BYTES:-47185920}
+      - MAX_INPUT_PIXELS=${MAX_INPUT_PIXELS:-60000000}
+      - MAX_OUTPUT_DIMENSION=${MAX_OUTPUT_DIMENSION:-8000}
+      - MAX_BATCH_FILES=${MAX_BATCH_FILES:-30}
+      - PROCESSING_TIMEOUT_MS=${PROCESSING_TIMEOUT_MS:-30000}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-40}
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:
