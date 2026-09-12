@@ -2,7 +2,6 @@
 
 FROM node:20-bookworm-slim AS base
 WORKDIR /app
-ENV NODE_ENV=production
 
 # ---- deps ----
 FROM base AS deps
